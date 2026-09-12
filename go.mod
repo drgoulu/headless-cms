@@ -1,3 +1,3 @@
-module github.com/privatemaker/headless-cms
+module github.com/drgoulu/headless-cms
 
 go 1.19
