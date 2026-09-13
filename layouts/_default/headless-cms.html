@@ -8,6 +8,11 @@
     {{- with site.Home.OutputFormats.Get "HeadlessCMSConfig" }}
       <link href="{{ .RelPermalink }}" type="text/yaml" rel="cms-config-url" />
     {{- end }}
+    {{- $katex_css := resources.Get "dist/lib/katex/katex.min.css" }}
+    {{- with $katex_css }}
+      {{- $katex_css = . | resources.Fingerprint "sha256" }}
+      <link rel="stylesheet" href="{{ $katex_css.RelPermalink }}" integrity="{{ $katex_css.Data.Integrity }}" crossorigin="anonymous" />
+    {{- end }}
     <script>
       // Disable Hugo LiveReload in CMS page to prevent reloads on preview builds
       const OrigWebSocket = window.WebSocket;
