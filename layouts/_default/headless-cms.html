@@ -8,6 +8,23 @@
     {{- with site.Home.OutputFormats.Get "HeadlessCMSConfig" }}
       <link href="{{ .RelPermalink }}" type="text/yaml" rel="cms-config-url" />
     {{- end }}
+    <script>
+      // Disable Hugo LiveReload in CMS page to prevent reloads on preview builds
+      const OrigWebSocket = window.WebSocket;
+      if (OrigWebSocket) {
+        window.WebSocket = function(url, ...args) {
+          if (typeof url === 'string' && url.includes('/livereload')) {
+            return {
+              close() {},
+              send() {},
+              addEventListener() {},
+              removeEventListener() {},
+            };
+          }
+          return new OrigWebSocket(url, ...args);
+        };
+      }
+    </script>
   </head>
   <body>
     <!-- Use Sveltia CMS -->
