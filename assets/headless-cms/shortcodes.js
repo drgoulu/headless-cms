@@ -82,6 +82,7 @@
 
   function registerComponents(cms) {
     if (!cms || typeof cms.registerEditorComponent !== 'function') return;
+    if (window.__SVELTIA_CMS__ || cms.isSveltiaCMS) return;
 
     // 1. Figure shortcode
     cms.registerEditorComponent({
@@ -308,7 +309,8 @@
     cms.registerEditorComponent({
       id: 'hugo-generic',
       label: 'Shortcode Hugo (Générique)',
-      pattern: /{{[<%]\s*([a-zA-Z0-9_-]+)\s*([^>%]*?)\s*[>%]}}(?:([\s\S]*?){{[<%]\s*\/\1\s*[>%]}})?/,
+      trigger: 'none',
+      pattern: /{{[<%]\s*(?!(?:\/|highlight|figure|youtube|vimeo|openbook|altmetric|gist)\b)([a-zA-Z0-9_-]+)\s*([^>%]*?)\s*[>%]}}(?:([\s\S]*?){{[<%]\s*\/\1\s*[>%]}})?/,
       fromBlock: function (match) {
         return {
           name: match[1],
