@@ -192,13 +192,23 @@
       label: 'OpenBook (Hugo)',
       pattern: /{{[<%]\s*openbook\s+([^>%]+?)\s*[>%]}}/,
       fromBlock: function (match) {
-        return parseHugoArgs(match[1]);
+        var parsed = parseHugoArgs(match[1]);
+        parsed.isbn = parsed.isbn || parsed.booknumber || parsed.id || parsed._primary || '';
+        parsed.template = parsed.template || parsed.templatenumber || parsed._pos_1 || '';
+        return parsed;
       },
       toBlock: function (obj) {
+        if (obj.booknumber || obj.templatenumber) {
+          return '{{< openbook ' + formatHugoArgs(obj, ['isbn', 'template', 'id']) + ' >}}';
+        }
         var isbn = obj.isbn || obj.id || obj._primary || '';
         var template = obj.template || obj._pos_1 || '';
         var extra = template ? ' ' + template : '';
-        return '{{< openbook ' + (isbn.includes(' ') ? '"' + isbn + '"' : isbn) + extra + ' >}}';
+        if (isbn) {
+          return '{{< openbook ' + (isbn.includes(' ') ? '"' + isbn + '"' : isbn) + extra + ' >}}';
+        }
+        var formatted = formatHugoArgs(obj);
+        return '{{< openbook' + (formatted ? ' ' + formatted : '') + ' >}}';
       },
       toPreview: function (obj) {
         var id = obj.isbn || obj.id || obj._primary || '';
