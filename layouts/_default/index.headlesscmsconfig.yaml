@@ -1,4 +1,5 @@
 {{- $params := .Site.Params.headless_cms -}}
+{{- $isSveltia := eq (lower ($params.engine | default "")) "sveltia" -}}
 {{- $config := newScratch -}}
 {{/* Reading settings from configuration. */}}
 {{- $keys := slice
@@ -7,7 +8,9 @@
 -}}
 {{- range $keys -}}
   {{- $key := . -}}
-  {{- if isset $params $key -}}
+  {{- if and $isSveltia (in (slice "locale" "search") $key) -}}
+    {{/* Sveltia CMS does not use or support root-level 'locale' or 'search' options */}}
+  {{- else if isset $params $key -}}
     {{- $config.Set $key (index $params $key) -}}
   {{- end -}}
 {{- end -}}
@@ -19,9 +22,10 @@
 {{- end -}}
 {{/* Set the site URL. */}}
 {{- $config.Set "site_url" site.BaseURL -}}
-{{/* Use site language as the locale if not set. */}}
-{{- if not ($config.Get "locale") }}
+{{/* Use site language as the locale if not set (for Decap / Netlify CMS only). */}}
+{{- if and (not $isSveltia) (not ($config.Get "locale")) }}
   {{- $locale := partialCached "headless-cms/functions/locale" . }}
   {{- $config.Set "locale" $locale }}
 {{- end }}
 {{- transform.Remarshal "yaml" $config.Values | safeHTML -}}
+
