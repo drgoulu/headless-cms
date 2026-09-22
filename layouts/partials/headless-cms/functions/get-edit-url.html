@@ -1,0 +1,63 @@
+{{/* Returns the CMS edit URL for a given page context (.) */}}
+{{ $editUrl := "" }}
+{{ if and .File .File.Path }}
+  {{ $filePath := .File.Path }}
+  {{ $ext := path.Ext $filePath }}
+  {{ $relPath := strings.TrimSuffix $ext $filePath }}
+  {{ $isDraft := .Draft | default false }}
+  {{ $collections := site.Params.headless_cms.collections }}
+
+  {{ $matchedCollection := "" }}
+  {{ $subPath := "" }}
+
+  {{/* 1. Priorité aux brouillons si une collection dédiée aux brouillons existe */}}
+  {{ if and $isDraft (isset $collections "drafts") }}
+    {{ $draftsColl := index $collections "drafts" }}
+    {{ $draftsFolder := strings.TrimPrefix "content/" (strings.TrimPrefix "content" ($draftsColl.folder | default "content")) }}
+    {{ $draftsFolder = strings.TrimSuffix "/" (strings.TrimPrefix "/" $draftsFolder) }}
+    {{ if or (eq $draftsFolder "") (hasPrefix $relPath (printf "%s/" $draftsFolder)) }}
+      {{ $matchedCollection = "drafts" }}
+      {{ if eq $draftsFolder "" }}
+        {{ $subPath = $relPath }}
+      {{ else }}
+        {{ $subPath = strings.TrimPrefix (printf "%s/" $draftsFolder) $relPath }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+
+  {{/* 2. Recherche standard parmi les collections */}}
+  {{ if eq $matchedCollection "" }}
+    {{ range $name, $coll := $collections }}
+      {{ if eq $matchedCollection "" }}
+        {{/* Vérifier le filtre draft éventuel */}}
+        {{ $filterMatches := true }}
+        {{ with $coll.filter }}
+          {{ if eq .field "draft" }}
+            {{ $draftVal := false }}
+            {{ if or (eq .value true) (eq .value "true") }}{{ $draftVal = true }}{{ end }}
+            {{ if ne $draftVal $isDraft }}
+              {{ $filterMatches = false }}
+            {{ end }}
+          {{ end }}
+        {{ end }}
+
+        {{ if $filterMatches }}
+          {{ $folder := strings.TrimPrefix "content/" (strings.TrimPrefix "content" ($coll.folder | default "")) }}
+          {{ $folder = strings.TrimSuffix "/" (strings.TrimPrefix "/" $folder) }}
+          {{ if and (ne $folder "") (hasPrefix $relPath (printf "%s/" $folder)) }}
+            {{ $matchedCollection = $name }}
+            {{ $subPath = strings.TrimPrefix (printf "%s/" $folder) $relPath }}
+          {{ else if and (eq $folder "") (ne $name "drafts") }}
+            {{ $matchedCollection = $name }}
+            {{ $subPath = $relPath }}
+          {{ end }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+
+  {{ if and (ne $matchedCollection "") (ne $subPath "") }}
+    {{ $editUrl = printf "/admin/#/collections/%s/entries/%s" $matchedCollection $subPath }}
+  {{ end }}
+{{ end }}
+{{ return $editUrl }}

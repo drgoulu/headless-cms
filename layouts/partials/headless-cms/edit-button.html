@@ -1,0 +1,60 @@
+{{/* Partial : Bouton "Éditer dans Sveltia / Decap CMS" */}}
+{{/* Utilisation : {{ partial "headless-cms/edit-button.html" . }} ou (dict "page" . "class" "...") */}}
+
+{{ $page := . }}
+{{ $customClass := "" }}
+{{ $label := "Éditer" }}
+{{ $id := "headless-cms-edit-button" }}
+
+{{ if reflect.IsMap . }}
+  {{ $page = .page | default .Page }}
+  {{ with .class }}{{ $customClass = . }}{{ end }}
+  {{ with .label }}{{ $label = . }}{{ end }}
+  {{ with .id }}{{ $id = . }}{{ end }}
+{{ end }}
+
+{{ $editUrl := partial "headless-cms/functions/get-edit-url" $page }}
+
+{{ if $editUrl }}
+  {{ $defaultClass := "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md transition-colors shadow-sm cursor-pointer no-underline" }}
+  {{ $finalClass := printf "%s %s" $defaultClass $customClass | strings.TrimSpace }}
+
+  <a id="{{ $id }}"
+     href="{{ $editUrl }}"
+     target="_blank"
+     rel="noopener"
+     data-headless-cms-edit
+     style="display: none;"
+     class="{{ $finalClass }}"
+     title="Éditer cet article dans le CMS">
+    <svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+    </svg>
+    <span>{{ $label }}</span>
+  </a>
+
+  <script>
+    (function() {
+      function checkCmsAuth() {
+        try {
+          var raw = localStorage.getItem('sveltia-cms.user') || localStorage.getItem('decap-cms-user');
+          if (!raw) return;
+          var u = JSON.parse(raw);
+          if (u && u.backendName && (u.token || u.backendName === 'local')) {
+            var btns = document.querySelectorAll('[data-headless-cms-edit]');
+            btns.forEach(function(btn) {
+              btn.style.display = 'inline-flex';
+            });
+          }
+        } catch(e) {}
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkCmsAuth);
+      } else {
+        checkCmsAuth();
+      }
+      window.addEventListener('storage', checkCmsAuth);
+    })();
+  </script>
+{{ end }}
